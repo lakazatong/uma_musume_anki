@@ -134,13 +134,13 @@ class AnkiDeck:
 		self.media_files.append(src_path)
 		imageTag = f'<img src="{os.path.basename(src_path)}">'
 
-		metadata_path = os.path.join(self.scrap_folder, name, "metadata.json")
+		attributes_path = os.path.join(self.scrap_folder, name, "attributes.json")
 		attributes_html = ''
-		if os.path.exists(metadata_path):
+		if os.path.exists(attributes_path):
 			attributes_html += '<table class="infobox"><tbody>'
 
-			with open(metadata_path, "r", encoding="utf-8") as f:
-				metadata = json.load(f)
+			with open(attributes_path, "r", encoding="utf-8") as f:
+				attributes = json.load(f)
 
 			key_order = [
 				"Kana", "Nicknames", "Alias",
@@ -150,9 +150,9 @@ class AnkiDeck:
 			]
 
 			for key in key_order:
-				if not (key in metadata and metadata[key].strip()):
+				if not (key in attributes and attributes[key].strip()):
 					continue
-				value = metadata[key]
+				value = attributes[key]
 
 				if key == "Teams":
 					teams_links = []
@@ -214,4 +214,6 @@ for outfit in ["Race", "Main", "Stage", "Proto"]:
 		if os.path.exists(full_path):
 			deck.add_card(name, outfit)
 
+print("saving deck...", end=" ", flush=True)
 deck.save()
+print("done")

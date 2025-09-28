@@ -5,7 +5,7 @@ from PIL import Image
 from io import BytesIO
 
 CACHE_FILE = "cache.pkl"
-OUT_FOLDER = "scrap"
+OUT_FOLDER = "uma_musume"
 CACHE = {}
 DELAY = 1 # seconds
 TTL = 7 * 24 * 60 * 60 # 7 days
@@ -41,7 +41,7 @@ def save_cache():
 		pickle.dump(CACHE, f)
 	print("done")
 
-def load_resource(url):
+def load_page(url):
 	now = time.time()
 	if url in CACHE:
 		fetched_time, soup = CACHE[url]
@@ -87,7 +87,7 @@ def find_next_sibling(start, cond):
 	return None
 
 def get_uma_teams():
-	teams_page = load_resource("https://umamusu.wiki/Teams_and_Clubs")
+	teams_page = load_page("https://umamusu.wiki/Teams_and_Clubs")
 	uma_teams = {}
 
 	for h2 in teams_page.find_all("h2"):
@@ -120,7 +120,7 @@ def get_uma_teams():
 
 def get_character_links():
 	url = BASE_URL + "/List_of_Characters"
-	soup = load_resource(url)
+	soup = load_page(url)
 
 	span = soup.find("span", {"id": "Umamusume"})
 	if not span:
@@ -159,7 +159,7 @@ def extract_images(soup, folder_name):
 		if not first_a:
 			continue
 		
-		subpage = load_resource(BASE_URL + first_a.get("href"))
+		subpage = load_page(BASE_URL + first_a.get("href"))
 		original_file = subpage.find("a", string="Original file")
 		if not original_file:
 			continue
@@ -202,7 +202,7 @@ def scrap_uma(href, uma_name, teams):
 	folder_name = os.path.join(OUT_FOLDER, uma_name.replace("/", "-"))
 	os.makedirs(folder_name, exist_ok=True)
 	
-	page = load_resource(BASE_URL + href)
+	page = load_page(BASE_URL + href)
 
 	extract_images(page, folder_name)
 
