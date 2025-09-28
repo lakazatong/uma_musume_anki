@@ -1,4 +1,4 @@
-import os, json
+import os, json, random
 import genanki
 from collections import defaultdict
 
@@ -91,15 +91,20 @@ img {
 }
 """
 
-class AnkiDeck:
-	def __init__(self, filename, uma_folder):
-		self.filename = filename
-		self.uma_folder = uma_folder
-		self.media_files = []
+class UmaDeck(genanki.Deck):
+	def __init__(self, uma_folder, outfit):
+		deck_name = f"{uma_folder.capitalize()} - {outfit}"
+		random.seed(deck_name)
+		deck_id = random.randrange(1 << 30, 1 << 31)
 
-		self.model = genanki.Model(
+		super().__init__(deck_id, deck_name)
+
+		self.uma_folder = uma_folder
+		self.uma_media_files = []
+
+		self.uma_model = genanki.Model(
 			1749272173,
-			'UmaMusume Model',
+			'Umamusume Model',
 			fields=[{'name': 'Image Tag'}, {'name': 'Name'}, {'name': 'Attributes'}],
 			templates=[{
 				'name': 'Card 1',
@@ -121,9 +126,7 @@ class AnkiDeck:
 			css=CSS
 		)
 
-		self.deck = genanki.Deck(1810934977, 'Umamusume')
-
-	def add_card(self, name, outfit):
+	def add_note(self, name, outfit):
 		safe_name = name.replace(" ", "_")
 		img_name = f"{safe_name}_({outfit}).png"
 		src_path = os.path.join(self.uma_folder, name, img_name)
@@ -131,7 +134,7 @@ class AnkiDeck:
 			print(f"Warning: source image not found: {src_path}")
 			return
 
-		self.media_files.append(src_path)
+		self.uma_media_files.append(src_path)
 		imageTag = f'<img src="{os.path.basename(src_path)}">'
 
 		attributes_path = os.path.join(self.uma_folder, name, "attributes.json")
@@ -172,13 +175,14 @@ class AnkiDeck:
 			attributes_html += '</tbody></table>'
 
 		name_html = link_wrap(name, f"https://umamusu.wiki/{name.replace(' ', '_')}")
-		note = StableNote(model=self.model, fields=[imageTag, name_html, attributes_html])
-		self.deck.add_note(note)
+		note = StableNote(model=self.uma_model, fields=[imageTag, name_html, attributes_html])
+		super().add_note(note)
 
 	def save(self):
-		package = genanki.Package(self.deck)
-		package.media_files = self.media_files
-		package.write_to_file(self.filename)
+		package = genanki.Package(self)
+		package.media_files = self.uma_media_files
+		filename = f"{self.name}.apkg"
+		package.write_to_file(filename)
 
 def parse_folder(uma_folder):
 	all_umas = []
@@ -206,37 +210,46 @@ def parse_folder(uma_folder):
 
 	return all_umas, teams
 
-def generate_deck(uma_folder):
+def generate_deck(uma_folder, outfit):
 	all_umas, teams = parse_folder(uma_folder)
 	team_members = set(sum(teams.values(), []))
-	deck = AnkiDeck(filename="umamusume.apkg", uma_folder=uma_folder)
+	deck = UmaDeck(uma_folder=uma_folder, outfit=outfit)
+	missing = []
 
-	for outfit in ["Race", "Main", "Stage", "Proto"]:
-		for team, names in teams.items():
-			for name in names:
-				safe_name = name.replace(" ", "_")
-				img_name = f"{safe_name}_({outfit}).png"
-				img_path = os.path.join(name, img_name)
-				full_path = os.path.join(uma_folder, img_path)
-				if os.path.exists(full_path):
-					deck.add_card(name, outfit)
-		for name in all_umas:
-			if name in team_members:
-				continue
+	for team, names in teams.items():
+		for name in names:
 			safe_name = name.replace(" ", "_")
 			img_name = f"{safe_name}_({outfit}).png"
-			img_path = os.path.join(name, img_name)
-			full_path = os.path.join(uma_folder, img_path)
+			full_path = os.path.join(uma_folder, name, img_name)
 			if os.path.exists(full_path):
-				deck.add_card(name, outfit)	
+				deck.add_note(name, outfit)
+			else:
+				missing.append(name)
 
-	return deck
+	for name in all_umas:
+		if name in team_members:
+			continue
+		safe_name = name.replace(" ", "_")
+		img_name = f"{safe_name}_({outfit}).png"
+		full_path = os.path.join(uma_folder, name, img_name)
+		if os.path.exists(full_path):
+			deck.add_note(name, outfit)
+		else:
+			missing.append(name)
+
+	return deck, missing
 
 def main():
-	deck = generate_deck("uma_musume")
-	print("saving deck...", end=" ", flush=True)
-	deck.save()
-	print("done")
+	uma_folder = "umamusume"
+	outfits = ["Race", "Main", "Stage", "Proto"]
+
+	for outfit in outfits:
+		deck, missing = generate_deck(uma_folder, outfit)
+		print(f"\nsaving {deck.name} (id: {deck.deck_id})...", end=" ", flush=True)
+		deck.save()
+		print("done")
+		if missing:
+			print(f"Missing {len(missing)} characters for outfit {outfit}: {', '.join(missing)}")
 
 if __name__ == "__main__":
 	main()

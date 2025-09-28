@@ -5,7 +5,7 @@ from PIL import Image
 from io import BytesIO
 
 CACHE_FILE = "cache.pkl"
-OUT_FOLDER = "uma_musume"
+OUT_FOLDER = "umamusume"
 CACHE = {}
 DELAY = 1 # seconds
 TTL = 7 * 24 * 60 * 60 # 7 days
