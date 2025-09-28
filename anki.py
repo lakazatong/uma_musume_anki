@@ -3,8 +3,8 @@ import genanki
 from collections import defaultdict
 
 OUTFITS = {
-	"Race": "Race",
 	"Main": "Uniform",
+	"Race": "Race",
 	"Stage": "Stage",
 	"Proto": "Prototype"
 }
@@ -195,6 +195,7 @@ class UmaDeck(genanki.Deck):
 def parse_folder(uma_folder):
 	all_umas = []
 	teams = defaultdict(list)
+	dorms = set()
 
 	for name in os.listdir(uma_folder):
 		folder_path = os.path.join(uma_folder, name)
@@ -202,60 +203,97 @@ def parse_folder(uma_folder):
 			continue
 
 		all_umas.append(name)
-
 		attributes_path = os.path.join(folder_path, "attributes.json")
 		if not os.path.exists(attributes_path):
 			continue
 
 		with open(attributes_path, "r", encoding="utf-8") as f:
 			attrs = json.load(f)
-		
-		if "Teams" not in attrs:
-			continue
 
-		for team in attrs["Teams"].split(","):
-			teams[team].append(name)
+		if "Teams" in attrs:
+			for team in attrs["Teams"].split(","):
+				teams[team].append(name)
+
+		if "Dorm" in attrs and attrs["Dorm"].strip():
+			dorms.add(attrs["Dorm"].strip())
 
 	random.seed(uma_folder)
 	random.shuffle(all_umas)
 
-	return all_umas, teams
-
-def generate_deck(uma_folder, outfit):
-	all_umas, teams = parse_folder(uma_folder)
-	team_members = set(sum(teams.values(), []))
-	deck = UmaDeck(uma_folder=uma_folder, outfit=outfit)
-	missing = []
-
-	def add_uma(name):
-		safe_name = name.replace(" ", "_")
-		img_name = f"{safe_name}_({outfit}).png"
-		full_path = os.path.join(uma_folder, name, img_name)
-		if os.path.exists(full_path):
-			deck.add_note(name)
-		else:
-			missing.append(name)
-
-	for name in all_umas:
-		if name in team_members:
-			add_uma(name)
-
-	for name in all_umas:
-		if not name in team_members:
-			add_uma(name)
-
-	return deck, missing
+	return all_umas, teams, dorms
 
 def main():
 	uma_folder = "umamusume"
+	all_umas, teams, dorms = parse_folder(uma_folder)
+	team_members = set(sum(teams.values(), []))
 
 	for outfit in OUTFITS:
-		deck, missing = generate_deck(uma_folder, outfit)
-		print(f"\nsaving {deck.name} (id: {deck.deck_id})...", end=" ", flush=True)
+		deck = UmaDeck(uma_folder=uma_folder, outfit=outfit)
+		missing_with_teams = []
+		missing_without_teams = []
+
+		def add_uma(name):
+			safe_name = name.replace(" ", "_")
+			img_name = f"{safe_name}_({outfit}).png"
+			full_path = os.path.join(uma_folder, name, img_name)
+			if os.path.exists(full_path):
+				deck.add_note(name)
+				return True
+			return False
+
+		for name in all_umas:
+			if name in team_members:
+				if not add_uma(name):
+					missing_with_teams.append(name)
+
+		for name in all_umas:
+			if name not in team_members:
+				if not add_uma(name):
+					missing_without_teams.append(name)
+
+		print(f"saving {deck.name} (id: {deck.deck_id})...", end=" ", flush=True)
 		deck.save()
 		print("done")
-		if missing:
-			print(f"Missing {len(missing)} characters for outfit {outfit}: {', '.join(missing)}")
+
+		all_missing = missing_with_teams + missing_without_teams
+		available_count = len(all_umas) - len(all_missing)
+		missing_count = len(all_missing)
+		team_available_count = len(team_members) - len(missing_with_teams)
+
+		if missing_count > 0:
+			missing_line = f" but the following ({missing_count}) [1]:\n- {'\n- '.join(all_missing)}"
+		else:
+			missing_line = " [1]"
+
+		team_list = list(teams.keys())
+		team_sample = ", ".join(team_list[:2]) + (", ..." if len(team_list) > 2 else "")
+		dorm_sample = " or ".join(sorted(dorms))
+
+		deck.description = f"""
+Contains all characters under the "Umamusume" category with a {OUTFITS[outfit]} outfit of https://umamusu.wiki/List_of_Characters ({available_count}){missing_line}
+
+It features:
+
+- A card for each character in {OUTFITS[outfit]} outfit
+- Gradual difficulty increase [2]
+- The following attributes (in order):
+  - Japanese: the katakana version of the name of the character
+  - Nicknames: list of nicknames if any
+  - Title: epithet of the character if any
+  - Birthday: birth date of the character but the year
+  - Height: height of the character in centimeters
+  - Teams: teams the character is part of ({team_sample})
+  - Dorm: dorm the character is part of ({dorm_sample})
+  - Roommate: the roommate of the character if any
+  - Voice Actor: the voice actor of the character in the anime
+
+[1] Numbers were given at the time of latest update
+[2] The first characters to be added are ones that are in a team, {team_available_count} of them [1], then the rest, all in seeded randomized order
+
+Credits:
+
+Content is available under Creative Commons Attribution-ShareAlike unless otherwise noted. Umamusume: Pretty Derby contents and materials are trademarks and copyrights of Cygames, Inc.
+""".strip()
 
 if __name__ == "__main__":
 	main()
