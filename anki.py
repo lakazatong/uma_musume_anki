@@ -143,7 +143,7 @@ class AnkiDeck:
 				attributes = json.load(f)
 
 			key_order = [
-				"Kana", "Nicknames", "Alias",
+				"Japanese", "Nicknames", "Title",
 				"Birthday", "Height",
 				"Teams", "Dorm", "Roommate",
 				"Voice Actor"

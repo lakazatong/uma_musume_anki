@@ -15,7 +15,7 @@ ATTRIBUTES = {
 	"Nicknames": lambda x: ", ".join(
 		part.strip() for part in re.split(r"<br\s*/?>", x) if part.strip()
 	),
-	# Alias will be filled later
+	# Title will be filled later
 
 	"Birthday": None,
 	"Height": None,
@@ -208,12 +208,12 @@ def scrap_uma(href, uma_name, teams):
 
 	attributes = extract_attributes(page)
 
-	alias_th = page.find("th", class_="infobox-subheader")
-	if alias_th:
-		i_tag = alias_th.find("i")
+	title_th = page.find("th", class_="infobox-subheader")
+	if title_th:
+		i_tag = title_th.find("i")
 		if i_tag:
-			alias = i_tag.get_text(strip=True).replace('"', '')
-			attributes["Alias"] = alias
+			title = i_tag.get_text(strip=True).replace('"', '')
+			attributes["Title"] = title
 
 	if teams:
 		attributes["Teams"] = ", ".join(teams)
