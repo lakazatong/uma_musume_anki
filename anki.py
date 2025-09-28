@@ -2,15 +2,12 @@ import os, json, random
 import genanki
 from collections import defaultdict
 
-def link_wrap(text, href, title=None):
-	if title is None:
-		title = text
-	return f'<a href="{href}" title="{title}">{text}</a>'
-
-class StableNote(genanki.Note):
-	@property
-	def guid(self):
-		return genanki.guid_for(self.fields[0], self.fields[1])
+OUTFITS = {
+	"Race": "Race",
+	"Main": "Uniform",
+	"Stage": "Stage",
+	"Proto": "Prototype"
+}
 
 CSS = """
 .frontbg {
@@ -91,14 +88,25 @@ img {
 }
 """
 
+def link_wrap(text, href, title=None):
+	if title is None:
+		title = text
+	return f'<a href="{href}" title="{title}">{text}</a>'
+
+class StableNote(genanki.Note):
+	@property
+	def guid(self):
+		return genanki.guid_for(self.fields[0], self.fields[1])
+
 class UmaDeck(genanki.Deck):
 	def __init__(self, uma_folder, outfit):
-		deck_name = f"{uma_folder.capitalize()} - {outfit}"
+		deck_name = f"{uma_folder.capitalize()} - {OUTFITS[outfit]}"
 		random.seed(deck_name)
 		deck_id = random.randrange(1 << 30, 1 << 31)
 
 		super().__init__(deck_id, deck_name)
 
+		self.outfit = outfit
 		self.uma_folder = uma_folder
 		self.uma_media_files = []
 
@@ -126,9 +134,9 @@ class UmaDeck(genanki.Deck):
 			css=CSS
 		)
 
-	def add_note(self, name, outfit):
+	def add_note(self, name):
 		safe_name = name.replace(" ", "_")
-		img_name = f"{safe_name}_({outfit}).png"
+		img_name = f"{safe_name}_({self.outfit}).png"
 		src_path = os.path.join(self.uma_folder, name, img_name)
 		if not os.path.exists(src_path):
 			print(f"Warning: source image not found: {src_path}")
@@ -208,6 +216,9 @@ def parse_folder(uma_folder):
 		for team in attrs["Teams"].split(","):
 			teams[team].append(name)
 
+	random.seed(uma_folder)
+	random.shuffle(all_umas)
+
 	return all_umas, teams
 
 def generate_deck(uma_folder, outfit):
@@ -216,34 +227,29 @@ def generate_deck(uma_folder, outfit):
 	deck = UmaDeck(uma_folder=uma_folder, outfit=outfit)
 	missing = []
 
-	for team, names in teams.items():
-		for name in names:
-			safe_name = name.replace(" ", "_")
-			img_name = f"{safe_name}_({outfit}).png"
-			full_path = os.path.join(uma_folder, name, img_name)
-			if os.path.exists(full_path):
-				deck.add_note(name, outfit)
-			else:
-				missing.append(name)
-
-	for name in all_umas:
-		if name in team_members:
-			continue
+	def add_uma(name):
 		safe_name = name.replace(" ", "_")
 		img_name = f"{safe_name}_({outfit}).png"
 		full_path = os.path.join(uma_folder, name, img_name)
 		if os.path.exists(full_path):
-			deck.add_note(name, outfit)
+			deck.add_note(name)
 		else:
 			missing.append(name)
+
+	for name in all_umas:
+		if name in team_members:
+			add_uma(name)
+
+	for name in all_umas:
+		if not name in team_members:
+			add_uma(name)
 
 	return deck, missing
 
 def main():
 	uma_folder = "umamusume"
-	outfits = ["Race", "Main", "Stage", "Proto"]
 
-	for outfit in outfits:
+	for outfit in OUTFITS:
 		deck, missing = generate_deck(uma_folder, outfit)
 		print(f"\nsaving {deck.name} (id: {deck.deck_id})...", end=" ", flush=True)
 		deck.save()
