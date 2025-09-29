@@ -1,5 +1,6 @@
-import os, json, random
+import os, json, random, sqlite3, zipfile, tempfile, shutil
 import genanki
+from datetime import datetime
 from collections import defaultdict
 
 OUTFITS = {
@@ -186,11 +187,48 @@ class UmaDeck(genanki.Deck):
 		note = StableNote(model=self.uma_model, fields=[imageTag, name_html, attributes_html])
 		super().add_note(note)
 
+	def inject_description(self, apkg_path):
+		tmpdir = tempfile.mkdtemp()
+		with zipfile.ZipFile(apkg_path, 'r') as zf:
+			zf.extractall(tmpdir)
+
+		db_path = os.path.join(tmpdir, 'collection.anki2')
+		conn = sqlite3.connect(db_path)
+		c = conn.cursor()
+		c.execute("SELECT decks FROM col")
+		decks_json, = c.fetchone()
+		import json
+		decks = json.loads(decks_json)
+
+		str_deck_id = str(self.deck_id)
+		if str_deck_id in decks:
+			decks[str_deck_id]['desc'] = self.description
+			c.execute("UPDATE col SET decks = ?",
+					(json.dumps(decks, ensure_ascii=False, separators=(',', ':')),))
+			conn.commit()
+
+		conn.close()
+
+		new_apkg = apkg_path
+		with zipfile.ZipFile(new_apkg, 'w') as zf:
+			for root, _, files in os.walk(tmpdir):
+				for file in files:
+					full_path = os.path.join(root, file)
+					rel_path = os.path.relpath(full_path, tmpdir)
+					zf.write(full_path, rel_path)
+
+		shutil.rmtree(tmpdir)
+
 	def save(self):
 		package = genanki.Package(self)
 		package.media_files = self.uma_media_files
 		filename = f"{self.name}.apkg"
 		package.write_to_file(filename)
+		self.inject_description(filename)
+
+		md_filename = f"{self.name}.md"
+		with open(md_filename, "w", encoding="utf-8") as f:
+			f.write(self.description)
 
 def parse_folder(uma_folder):
 	all_umas = []
@@ -251,10 +289,6 @@ def main():
 				if not add_uma(name):
 					missing_without_teams.append(name)
 
-		print(f"saving {deck.name} (id: {deck.deck_id})...", end=" ", flush=True)
-		deck.save()
-		print("done")
-
 		all_missing = missing_with_teams + missing_without_teams
 		available_count = len(all_umas) - len(all_missing)
 		missing_count = len(all_missing)
@@ -268,6 +302,7 @@ def main():
 		team_list = list(teams.keys())
 		team_sample = ", ".join(team_list[:2]) + (", ..." if len(team_list) > 2 else "")
 		dorm_sample = " or ".join(sorted(dorms))
+		now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 		deck.description = f"""
 Contains all characters under the "Umamusume" category with a {OUTFITS[outfit]} outfit of https://umamusu.wiki/List_of_Characters ({available_count}){missing_line}
@@ -287,13 +322,17 @@ It features:
   - Roommate: the roommate of the character if any
   - Voice Actor: the voice actor of the character in the anime
 
-[1] Numbers were given at the time of latest update
+[1] Numbers were given at the time of latest update ({now})  
 [2] The first characters to be added are ones that are in a team, {team_available_count} of them [1], then the rest, all in seeded randomized order
 
 Credits:
 
 Content is available under Creative Commons Attribution-ShareAlike unless otherwise noted. Umamusume: Pretty Derby contents and materials are trademarks and copyrights of Cygames, Inc.
 """.strip()
+
+		print(f"saving {deck.name} (id: {deck.deck_id})...", end=" ", flush=True)
+		deck.save()
+		print("done")
 
 if __name__ == "__main__":
 	main()
