@@ -107,7 +107,7 @@ class UmaDeck(genanki.Deck):
 
 		super().__init__(deck_id, deck_name)
 
-		self.outfit = outfit
+		self.uma_outfit = outfit
 		self.uma_folder = uma_folder
 		self.uma_media_files = []
 
@@ -137,7 +137,7 @@ class UmaDeck(genanki.Deck):
 
 	def add_note(self, name):
 		safe_name = name.replace(" ", "_")
-		img_name = f"{safe_name}_({self.outfit}).png"
+		img_name = f"{safe_name}_({self.uma_outfit}).png"
 		src_path = os.path.join(self.uma_folder, name, img_name)
 		if not os.path.exists(src_path):
 			print(f"Warning: source image not found: {src_path}")
