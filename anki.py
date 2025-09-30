@@ -1,6 +1,5 @@
 import os, json, random, sqlite3, zipfile, tempfile, shutil
 import genanki
-from datetime import datetime
 from collections import defaultdict
 
 OUTFITS = {
@@ -295,22 +294,21 @@ def main():
 		team_available_count = len(team_members) - len(missing_with_teams)
 
 		if missing_count > 0:
-			missing_line = f" but the following ({missing_count}) [1]:\n- {'\n- '.join(all_missing)}"
+			missing_line = f"\nThese characters don't have this outfit ({missing_count}):\n- " + "\n- ".join(all_missing)
 		else:
-			missing_line = " [1]"
+			missing_line = ""
 
 		team_list = list(teams.keys())
 		team_sample = ", ".join(team_list[:2]) + (", ..." if len(team_list) > 2 else "")
 		dorm_sample = " or ".join(sorted(dorms))
-		now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 		deck.description = f"""
-Contains all characters under the "Umamusume" category with a {OUTFITS[outfit]} outfit of https://umamusu.wiki/List_of_Characters ({available_count}){missing_line}
+Contains all Umamusume characters that have the {OUTFITS[outfit]} outfit ({available_count}) from https://umamusu.wiki/List_of_Characters  {missing_line}
 
 It features:
 
 - A card for each character in {OUTFITS[outfit]} outfit
-- Gradual difficulty increase [2]
+- Gradual difficulty increase [1]
 - The following attributes (in order):
   - Japanese: the katakana version of the name of the character
   - Nicknames: list of nicknames if any
@@ -322,8 +320,7 @@ It features:
   - Roommate: the roommate of the character if any
   - Voice Actor: the voice actor of the character in the anime
 
-[1] Numbers were given at the time of latest update ({now})  
-[2] The first characters to be added are ones that are in a team, {team_available_count} of them [1], then the rest, all in seeded randomized order
+[1] The first characters to be added are the ones that are in a team, {team_available_count} of them, then the rest, all in a seeded randomized order
 
 Credits:
 

@@ -200,32 +200,32 @@ def extract_attributes(soup):
 	return attributes
 
 def scrap_uma(href, uma_name, teams):
-    folder_name = os.path.join(OUT_FOLDER, uma_name.replace("/", "-"))
-    os.makedirs(folder_name, exist_ok=True)
-    
-    page = load_page(BASE_URL + href)
+	folder_name = os.path.join(OUT_FOLDER, uma_name.replace("/", "-"))
+	os.makedirs(folder_name, exist_ok=True)
+	
+	page = load_page(BASE_URL + href)
 
-    extract_images(page, folder_name)
+	extract_images(page, folder_name)
 
-    attributes = extract_attributes(page)
+	attributes = extract_attributes(page)
 
-    title_th = page.find("th", class_="infobox-subheader")
-    if title_th:
-        i_tag = title_th.find("i")
-        if i_tag:
-            title = i_tag.get_text(strip=True).replace('"', '')
-            attributes["Title"] = title
+	title_th = page.find("th", class_="infobox-subheader")
+	if title_th:
+		i_tag = title_th.find("i")
+		if i_tag:
+			title = i_tag.get_text(strip=True).replace('"', '')
+			attributes["Title"] = title
 
-    if teams:
-        attributes["Teams"] = ", ".join(teams)
+	if teams:
+		attributes["Teams"] = ", ".join(teams)
 
-    if "Dorm" in attributes:
-        if attributes["Dorm"] not in DORMS:
-            del attributes["Dorm"]
+	if "Dorm" in attributes:
+		if attributes["Dorm"] not in DORMS:
+			del attributes["Dorm"]
 
-    attributes_path = os.path.join(folder_name, "attributes.json")
-    with open(attributes_path, "w", encoding="utf-8") as f:
-        json.dump(attributes, f, ensure_ascii=False, indent=4)
+	attributes_path = os.path.join(folder_name, "attributes.json")
+	with open(attributes_path, "w", encoding="utf-8") as f:
+		json.dump(attributes, f, ensure_ascii=False, indent=4)
 
 def main():
 	load_cache()
