@@ -137,7 +137,7 @@ class UmaDeck(genanki.Deck):
 	def add_note(self, name):
 		safe_name = name.replace(" ", "_")
 		img_name = f"{safe_name}_({self.uma_outfit}).png"
-		src_path = os.path.join(self.uma_folder, name, img_name)
+		src_path = os.path.join(self.uma_folder, f"+{name}+", img_name)
 		if not os.path.exists(src_path):
 			print(f"Warning: source image not found: {src_path}")
 			return
@@ -145,7 +145,7 @@ class UmaDeck(genanki.Deck):
 		self.uma_media_files.append(src_path)
 		imageTag = f'<img src="{os.path.basename(src_path)}">'
 
-		attributes_path = os.path.join(self.uma_folder, name, "attributes.json")
+		attributes_path = os.path.join(self.uma_folder, f"+{name}+", "attributes.json")
 		attributes_html = ''
 		if os.path.exists(attributes_path):
 			attributes_html += '<table class="infobox"><tbody>'
@@ -157,7 +157,7 @@ class UmaDeck(genanki.Deck):
 				"Japanese", "Nicknames", "Title",
 				"Birthday", "Height",
 				"Teams", "Dorm", "Roommate",
-				"Voice Actor"
+				"Voice Actor", "Game ID"
 			]
 
 			for key in key_order:
@@ -239,6 +239,8 @@ def parse_folder(uma_folder):
 		if not os.path.isdir(folder_path):
 			continue
 
+		name = name[1:-1] # remove + at start and end
+
 		all_umas.append(name)
 		attributes_path = os.path.join(folder_path, "attributes.json")
 		if not os.path.exists(attributes_path):
@@ -272,7 +274,7 @@ def main():
 		def add_uma(name):
 			safe_name = name.replace(" ", "_")
 			img_name = f"{safe_name}_({outfit}).png"
-			full_path = os.path.join(uma_folder, name, img_name)
+			full_path = os.path.join(uma_folder, f"+{name}+", img_name)
 			if os.path.exists(full_path):
 				deck.add_note(name)
 				return True
@@ -319,6 +321,7 @@ It features:
   - Dorm: dorm the character is part of ({dorm_sample})
   - Roommate: the roommate of the character if any
   - Voice Actor: the voice actor of the character in the anime
+  - Game ID: the ID of the character in the mobile game
 
 [1] The first characters to be added are the ones that are in a team, {team_available_count} of them, then the rest, all in a seeded randomized order
 

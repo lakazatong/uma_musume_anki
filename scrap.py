@@ -25,6 +25,7 @@ ATTRIBUTES = {
 	"Roommate": lambda x: BeautifulSoup(x, "html.parser").get_text(strip=True),
 
 	"Voice Actor": lambda x: BeautifulSoup(x, "html.parser").get_text(strip=True),
+	# Game ID will be filled later
 }
 DORMS = ["Miho", "Ritto"]
 
@@ -119,6 +120,11 @@ def get_uma_teams():
 
 	return uma_teams
 
+def get_uma_game_id():
+	with open ("uma_game_ids.json", "r", encoding="utf-8") as f:
+		data = json.load(f)
+	return data
+
 def get_character_links():
 	url = BASE_URL + "/List_of_Characters"
 	soup = load_page(url)
@@ -199,9 +205,9 @@ def extract_attributes(soup):
 	
 	return attributes
 
-def scrap_uma(href, uma_name, teams):
-	folder_name = os.path.join(OUT_FOLDER, uma_name.replace("/", "-"))
-	os.makedirs(folder_name, exist_ok=True)
+def scrap_uma(href, uma_name):
+	folder_name = os.path.join(OUT_FOLDER, f"+{uma_name.replace("/", "-")}+")
+	os.makedirs(folder_name , exist_ok=True)
 	
 	page = load_page(BASE_URL + href)
 
@@ -216,26 +222,38 @@ def scrap_uma(href, uma_name, teams):
 			title = i_tag.get_text(strip=True).replace('"', '')
 			attributes["Title"] = title
 
-	if teams:
-		attributes["Teams"] = ", ".join(teams)
-
 	if "Dorm" in attributes:
 		if attributes["Dorm"] not in DORMS:
 			del attributes["Dorm"]
 
 	attributes_path = os.path.join(folder_name, "attributes.json")
-	with open(attributes_path, "w", encoding="utf-8") as f:
-		json.dump(attributes, f, ensure_ascii=False, indent=4)
+
+	return attributes_path, attributes
 
 def main():
 	load_cache()
 
 	os.makedirs(OUT_FOLDER, exist_ok=True)
+
 	uma_teams = get_uma_teams()
+	game_ids = get_uma_game_id()
+
 	for a in get_character_links():
 		href = a.get("href")
 		uma = a.get_text(strip=True)
-		scrap_uma(href, uma, uma_teams.get(uma, []))
+
+		attributes_path, attributes = scrap_uma(href, uma)
+		
+		teams = uma_teams.get(uma, [])
+		if teams:
+			attributes["Teams"] = ", ".join(teams)
+
+		game_id = game_ids.get(uma, None)
+		if game_id:
+			attributes["Game ID"] = game_id
+
+		with open(attributes_path, "w", encoding="utf-8") as f:
+			json.dump(attributes, f, ensure_ascii=False, indent=4)
 
 	save_cache()
 
