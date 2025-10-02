@@ -11,30 +11,62 @@ OUTFITS = {
 
 CSS = """
 .frontbg {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	background: none;
-	padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: none;
+    padding: 0;
+    width: 100%;
+    height: 100vh;
+    box-sizing: border-box;
 }
 
 .backbg {
-	display: flex;
-	align-items: flex-start;
-	background: none;
-	padding: 20px;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    background: none;
+    padding: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.back-left img {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100vh;
+    object-fit: contain;
+    border-radius: 6px;
+}
+
+@media (max-width: 768px) {
+    .backbg {
+        flex-direction: column-reverse;
+        align-items: center;
+    }
+    .back-right {
+        width: 100%;
+        margin: 0 0 20px 0;
+    }
+    .back-left {
+        width: 100%;
+    }
+    .back-left img {
+        max-height: 40vh;
+    }
 }
 
 .back-left {
-	flex: 0 0 auto;
-	margin-right: 40px;
+    flex: 0 1 auto; /* only as wide as image needs */
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
 }
 
 .back-right {
-	flex: 1;
-	display: flex;
-	flex-direction: column;
-	justify-content: flex-start;
+    flex: 0 0 auto; /* natural width */
+    margin-right: 40px;
 }
 
 .name {
@@ -82,9 +114,12 @@ a:hover {
 }
 
 img {
-	display: block;
-	height: auto;
-	border-radius: 6px;
+    max-width: 100%;
+    max-height: 100vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 6px;
 }
 """
 
