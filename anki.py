@@ -10,6 +10,14 @@ OUTFITS = {
 }
 
 CSS = """
+html, body {
+    height: 100%;
+    overflow: hidden; /* disable global scrolling */
+    margin: 0;
+    padding: 0;
+}
+
+/* Front side */
 .frontbg {
     display: flex;
     justify-content: center;
@@ -21,21 +29,40 @@ CSS = """
     box-sizing: border-box;
 }
 
+/* Back side layout */
 .backbg {
     display: flex;
     flex-direction: row;
-    align-items: flex-start;
+    align-items: flex-start; /* sticky works */
     background: none;
     padding: 20px;
     width: 100%;
+    height: 100vh;
     box-sizing: border-box;
+    overflow: hidden; /* disable global scroll */
+}
+
+.back-right {
+    flex: 1 1 auto;
+    margin-left: 40px;
+    max-height: calc(100vh - 20px); /* match left height */
+    overflow-y: auto; /* scrollable attributes */
+}
+
+.back-left {
+    flex: 0 1 auto;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    position: sticky;
+    top: 20px;
+    height: calc(100vh - 20px); /* full visible height minus bottom offset */
 }
 
 .back-left img {
+    max-height: 100%; /* contained in viewport */
     width: auto;
     height: auto;
-    max-width: 100%;
-    max-height: 100vh;
     object-fit: contain;
     border-radius: 6px;
 }
@@ -45,81 +72,86 @@ CSS = """
         flex-direction: column-reverse;
         align-items: center;
     }
+
+    .back-left {
+        width: 100%;
+        height: 30vh; /* slightly smaller than before */
+    }
+
+    .back-left img {
+        max-height: 100%;
+    }
+
     .back-right {
         width: 100%;
         margin: 0 0 20px 0;
+        max-height: none;
+        overflow-y: auto;
+
+        /* prevent horizontal scroll */
+        overflow-x: hidden;
+        word-break: break-word; 
     }
-    .back-left {
-        width: 100%;
-    }
-    .back-left img {
-        max-height: 40vh;
+
+    table.infobox {
+        min-width: 0; /* allow table to shrink in narrow screens */
     }
 }
 
-.back-left {
-    flex: 0 1 auto; /* only as wide as image needs */
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-}
-
-.back-right {
-    flex: 0 0 auto; /* natural width */
-    margin-right: 40px;
-}
-
+/* Text styling */
 .name {
-	font-family: 'Noto Sans JP', 'BIZ UDGothic', sans-serif;
-	font-size: 48px;
-	font-weight: bold;
-	margin-bottom: 25px;
-	color: #fff;
-	text-align: left;
+    font-family: 'Noto Sans JP', 'BIZ UDGothic', sans-serif;
+    font-size: 48px;
+    font-weight: bold;
+    margin-bottom: 25px;
+    color: #fff;
+    text-align: left;
 }
 
+/* Table styling */
 table.infobox {
-	border-collapse: collapse;
-	width: auto;
+    border-collapse: collapse;
+    width: auto;
 }
 
 table.infobox td {
-	border: none;
-	font-size: 24px;
-	color: #eee;
-	padding: 6px 0;
-	line-height: 1.8;
-	text-align: left;
+    border: none;
+    font-size: 24px;
+    color: #eee;
+    padding: 6px 0;
+    line-height: 1.8;
+    text-align: left;
 }
 
 table.infobox td:first-child {
-	width: 140px;   /* fixed width for keys */
-	color: #ccc;
-	font-weight: bold;
-	padding-right: 100px; /* gap between key and value */
+    width: 140px;   /* fixed width for keys */
+    color: #ccc;
+    font-weight: bold;
+    padding-right: 100px; /* gap between key and value */
 }
 
 table.infobox td:last-child {
-	text-align: left;
-	width: auto;
+    text-align: left;
+    width: auto;
 }
 
+/* Links */
 a {
-	color: #66ccff;
-	text-decoration: none;
+    color: #66ccff;
+    text-decoration: none;
 }
 
 a:hover {
-	text-decoration: underline;
+    text-decoration: underline;
 }
 
+/* General images */
 img {
     max-width: 100%;
     max-height: 100vh;
     width: auto;
     height: auto;
     object-fit: contain;
-    border-radius: 6px;
 }
 """
 
